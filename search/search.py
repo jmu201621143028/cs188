@@ -87,7 +87,32 @@ def depthFirstSearch(problem: SearchProblem):
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    actions = []
+    vis = set()
+    from util import PriorityQueue
+    def dfs(node):
+        vis.add(node)
+        if problem.isGoalState(node):
+            return True
+        hq = PriorityQueue()
+        for next_state, action, cost in problem.getSuccessors(node):
+            hq.push((next_state, action), cost)
+
+        while not hq.isEmpty():
+            next_state, action = hq.pop()
+            actions.append(action)
+            if next_state in vis:
+                actions.pop()
+                continue
+            elif dfs(next_state):
+                return True
+            else:
+                vis.remove(next_state)
+                actions.pop()
+        return False
+    dfs(problem.getStartState())
+    return actions
+
 
 def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
