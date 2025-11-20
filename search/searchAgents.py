@@ -296,6 +296,12 @@ class CornersProblem(search.SearchProblem):
         space)
         """
         "*** YOUR CODE HERE ***"
+        start =self.startingPosition
+        visited =set()
+        # 如果起点就在角落，要把它标记为visited
+        if start in self.corners:
+            visited.add(start)
+        return self.startingPosition, frozenset(visited)
         util.raiseNotDefined()
 
     def isGoalState(self, state: Any):
@@ -303,6 +309,8 @@ class CornersProblem(search.SearchProblem):
         Returns whether this search state is a goal state of the problem.
         """
         "*** YOUR CODE HERE ***"
+        _, vis= state
+        return len(vis)== len(self.corners)
         util.raiseNotDefined()
 
     def getSuccessors(self, state: Any):
@@ -317,6 +325,7 @@ class CornersProblem(search.SearchProblem):
         """
 
         successors = []
+        (x, y), vis = state
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
             # Here's a code snippet for figuring out whether a new position hits a wall:
@@ -327,6 +336,15 @@ class CornersProblem(search.SearchProblem):
 
             "*** YOUR CODE HERE ***"
 
+            dx, dy = Actions.directionToVector(action)
+            nextx, nexty = int(x+dx), int(y+dy)
+            hitsWall = self.walls[nextx][nexty]
+            if hitsWall: continue
+            nextvis = set(vis)
+            if(nextx, nexty) in self.corners:
+                nextvis.add((nextx, nexty))
+            next_state = (nextx,nexty), frozenset(nextvis)
+            successors.append((next_state, action, 1))
         self._expanded += 1 # DO NOT CHANGE
         return successors
 
@@ -361,6 +379,31 @@ def cornersHeuristic(state: Any, problem: CornersProblem):
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
     "*** YOUR CODE HERE ***"
+    pos, vis = state
+    unvis =[corner for corner in corners if corner not in vis]
+    if not unvis:
+        return 0
+
+    #计算到goal的最近距离
+    nearest_dis = min(abs(pos[0] - x) + abs(pos[1] - y) for x, y in unvis)
+
+    # 计算最小生成树的距离
+    # 不断地选择最小的边进行连接，知道所有的节点都是connected的状态
+    mst_cost = 0
+    nodes = unvis[:]
+    connected = [nodes.pop(0)]
+    while nodes:
+        min_edge = float('inf')
+        for u in connected:
+            for v in nodes:
+                d = abs(u[0] - v[0]) + abs(u[1] - v[1])
+                if d < min_edge:
+                    min_edge = d
+                    closest = v
+        mst_cost += min_edge
+        connected.append(closest)
+        nodes.remove(closest)
+    return nearest_dis + mst_cost
     return 0 # Default to trivial solution
 
 class AStarCornersAgent(SearchAgent):
@@ -455,6 +498,26 @@ def foodHeuristic(state: Tuple[Tuple, List[List]], problem: FoodSearchProblem):
     """
     position, foodGrid = state
     "*** YOUR CODE HERE ***"
+    foodGrid = foodGrid.asList()
+    # 计算到goal的最近距离
+    if len(foodGrid) == 0:
+        return 0
+    nearest_dis = min(abs(x-position[0])+ abs(y - position[1]) for x, y in foodGrid)
+    # 计算最小生成树
+    mst_dis = 0
+    connected = [foodGrid.pop()]
+    while foodGrid:
+        min_edge = float('inf')
+        for u in connected:
+            for v in foodGrid:
+                d = abs(u[0] - v[0]) + abs(u[1] - v[1])
+                if d < min_edge:
+                    min_edge = d
+                    closest = v
+        mst_dis += min_edge
+        connected.append(closest)
+        foodGrid.remove(closest)
+    return mst_dis + nearest_dis
     return 0
 
 class ClosestDotSearchAgent(SearchAgent):
@@ -485,6 +548,9 @@ class ClosestDotSearchAgent(SearchAgent):
         walls = gameState.getWalls()
         problem = AnyFoodSearchProblem(gameState)
 
+        from search import bfs
+        path = bfs(problem)
+        return path
         "*** YOUR CODE HERE ***"
         util.raiseNotDefined()
 
@@ -522,6 +588,7 @@ class AnyFoodSearchProblem(PositionSearchProblem):
         x,y = state
 
         "*** YOUR CODE HERE ***"
+        return self.food[x][y]
         util.raiseNotDefined()
 
 def mazeDistance(point1: Tuple[int, int], point2: Tuple[int, int], gameState: pacman.GameState) -> int:
