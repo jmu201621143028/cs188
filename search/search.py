@@ -166,7 +166,7 @@ def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     vis = dict()
     while not pq.isEmpty():
         state, actions, cost = pq.pop()
-        if state in vis and vis[state] <= cost:
+        if state in vis and vis[state] < cost:
             continue
         vis[state] = cost
         if problem.isGoalState(state):
