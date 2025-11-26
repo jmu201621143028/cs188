@@ -285,6 +285,15 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
+    pacman_pos = currentGameState.getPacmanPosition()
+    ghost_pos = currentGameState.getGhostPositions()
+    score = currentGameState.getScore()
+
+    from util import manhattanDistance
+    for pos in ghost_pos:
+        score += manhattanDistance(pacman_pos, pos)
+
+    return score
     util.raiseNotDefined()
 
 # Abbreviation
