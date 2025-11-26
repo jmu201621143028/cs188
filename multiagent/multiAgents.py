@@ -188,6 +188,44 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
+        numAgents = gameState.getNumAgents()
+        depth = self.depth
+        def AlphaBeta(state: GameState, agentIndex, depthRemain, alpha, beta):
+            if state.isWin() or state.isLose() or depthRemain == 0:
+                return self.evaluationFunction(state)
+
+            actions = state.getLegalActions(agentIndex)
+            bestValue = -float('inf') if agentIndex == 0 else float('inf')  # Pacman max，幽灵 min
+
+            for action in actions:
+                successor = state.generateSuccessor(agentIndex, action)
+                nextAgent = (agentIndex + 1) % numAgents # 切换到下一个 agent
+                nextDepth = depthRemain - 1 if nextAgent == 0 else depthRemain
+
+                value = AlphaBeta(successor, nextAgent, nextDepth, alpha, beta)  # 递归调用
+
+                if agentIndex == 0:  # Pacman: max
+                    bestValue = max(bestValue, value)
+                    if value > beta: return value
+                    alpha = max(alpha, value)
+                else:  # Ghost: min
+                    bestValue = min(bestValue, value)
+                    if value < alpha: return value
+                    beta = min(beta, value)
+            return bestValue
+
+        bestAction = None
+        bestScore = -float('inf')
+        alpha, beta = -float('inf'), float('inf')
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            score = AlphaBeta(successor, 1, depth, alpha, beta)
+            if score > bestScore:
+                bestScore = score
+                bestAction = action
+            alpha = max(alpha, score)
+            # beta = min(beta, score)
+        return bestAction
         util.raiseNotDefined()
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
@@ -203,6 +241,40 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         legal moves.
         """
         "*** YOUR CODE HERE ***"
+        numAgents = gameState.getNumAgents()
+        depth = self.depth
+
+        # 只是返回一次action, 不是直接搜索出整个actions(最短路径)
+        # 评估每个游戏状态
+        def Expectimax(state: GameState, agentIndex, depthRemain):
+            if state.isWin() or state.isLose() or depthRemain == 0:
+                return self.evaluationFunction(state)
+
+            actions = state.getLegalActions(agentIndex)
+            bestValue = -float('inf') if agentIndex == 0 else 0  # Pacman max，幽灵 min
+
+            for action in actions:
+                successor = state.generateSuccessor(agentIndex, action)
+                nextAgent = (agentIndex + 1) % numAgents # 切换到下一个 agent
+                nextDepth = depthRemain - 1 if nextAgent == 0 else depthRemain
+
+                value = Expectimax(successor, nextAgent, nextDepth)  # 递归调用
+
+                if agentIndex == 0:  # Pacman: max
+                    bestValue = max(bestValue, value)
+                else:  # Ghost: min
+                    bestValue += value / len(actions)
+            return bestValue
+
+        bestAction = None
+        bestScore = -float('inf')
+        for action in gameState.getLegalActions(0):
+            successor = gameState.generateSuccessor(0, action)
+            score = Expectimax(successor, 1, depth)
+            if score > bestScore:
+                bestScore = score
+                bestAction = action
+        return bestAction
         util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState: GameState):
