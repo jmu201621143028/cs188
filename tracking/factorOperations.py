@@ -102,7 +102,24 @@ def joinFactors(factors: List[Factor]):
 
 
     "*** YOUR CODE HERE ***"
-    raiseNotDefined()
+    union_unconditioned = set()
+    union_conditioned = set()
+    varuableDomainDict = dict()
+
+    for factor in factors:
+        union_unconditioned |= factor.unconditionedVariables()
+        union_conditioned |= factor.conditionedVariables()
+        varuableDomainDict = factor.variableDomainsDict()
+    
+    union_conditioned -= union_unconditioned
+
+    newfactor = Factor(union_unconditioned, union_conditioned, varuableDomainDict)
+    for assignment in newfactor.getAllPossibleAssignmentDicts():
+        prob = 1
+        for f in factors:
+            prob *= f.getProbability(assignment)
+        newfactor.setProbability(assignment, prob)
+    return newfactor
     "*** END YOUR CODE HERE ***"
 
 ########### ########### ###########
